@@ -20,8 +20,8 @@ class StoragePipeline:
         # Check if the Product already exists
         product = (
             self.session.query(Product)
-            .filter_by(store=item["store"], sku=item["sku"])
-            .first()
+                .filter_by(store=item["store"], sku=item["sku"])
+                .first()
         )
 
         if product is None:
@@ -33,8 +33,8 @@ class StoragePipeline:
         product.description = item["description"]
         product.package = item['package']
         product.image_url = item["image_url"]
-        product.category = item["category"]
-        product.url = item['url']
+        product.category = item.get("category", '')
+        product.url = item.get('url', '')
 
         self.session.add(product)
         self.session.commit()
@@ -42,8 +42,8 @@ class StoragePipeline:
         # Check if the BranchProduct already exists
         branch_product = (
             self.session.query(BranchProduct)
-            .filter_by(product=product, branch=item["branch"])
-            .first()
+                .filter_by(product=product, branch=item["branch"])
+                .first()
         )
 
         if branch_product is None:
