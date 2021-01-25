@@ -31,7 +31,10 @@ class StoragePipeline:
         product.brand = item["brand"]
         product.name = item["name"]
         product.description = item["description"]
+        product.package = item['package']
         product.image_url = item["image_url"]
+        product.image_url = item["category"]
+        product.url = item['url']
 
         self.session.add(product)
         self.session.commit()
