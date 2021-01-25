@@ -91,4 +91,27 @@ class CaWalmartBot(scrapy.Spider):
         item['sku'] = sku
         item['name'] = name
 
+        url_store = 'https://www.walmart.ca/api/product-page/find-in-store?' \
+                    'latitude={}&longitude={}&lang=en&upc={}'
 
+        for k in branches.keys():
+            yield scrapy.http.Request(
+                url_store.format(branches[k]['latitude'], branches[k]['longitude'], upc[0]),
+                callback=self.parse_find_store, cb_kwargs={'item': item},
+                meta={'handle_httpstatus_all': True},
+                dont_filter=False, headers=self.header)
+
+    def parse_find_store(self, response, item):
+        store_json = json.loads(response.body)
+
+        branch = store_json['info'][0]['id']
+        stock = store_json['info'][0]['availableToSellQty']
+        price = store_json['info'][0].get('sellPrice', 0)
+
+        item['branch'] = branch
+        item['stock'] = stock
+        item['price'] = price
+
+        print(item)
+
+        yield item
