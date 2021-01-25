@@ -33,7 +33,7 @@ class StoragePipeline:
         product.description = item["description"]
         product.package = item['package']
         product.image_url = item["image_url"]
-        product.image_url = item["category"]
+        product.category = item["category"]
         product.url = item['url']
 
         self.session.add(product)
