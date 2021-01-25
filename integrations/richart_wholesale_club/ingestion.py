@@ -1,14 +1,20 @@
 import os
-
+import sys
 import re
 import pandas as pd
 
-from .utils import lower_col_names, lower_columns, capitalize_columns_names
+from sqlalchemy import create_engine
+from integrations.richart_wholesale_club.utils import lower_col_names, lower_columns, \
+    capitalize_columns_names
+from models import BranchProduct, Product, Base
+from sqlalchemy.orm import sessionmaker
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ASSETS_DIR = os.path.join(PROJECT_DIR, "assets")
 PRODUCTS_PATH = os.path.join(ASSETS_DIR, "PRODUCTS.csv")
 PRICES_STOCK_PATH = os.path.join(ASSETS_DIR, "PRICES-STOCK.csv")
+DB_DIR = os.path.join(PROJECT_DIR, 'integrations/richart_wholesale_club', 'db.sqlite')
+engine = create_engine(r'sqlite:///' + DB_DIR)
 
 
 # Process CSV files
@@ -55,13 +61,31 @@ def process_csv_files():
                  'FINELINE_NUMBER',
                  'DESCRIPTION_STATUS'])
 
-    # Using styling functions
+    # Using utils functions
     capitalize_columns_names(products_df, ['NAME', 'BRAND', 'DESCRIPTION'])
     lower_columns(products_df, ['CATEGORY', 'PACKAGE'])
     lower_col_names(products_df, branchproducts_df)
 
-    print(products_df)
-    print(branchproducts_df)
+    # Loading to SQLite DB
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    session.bulk_insert_mappings(Product, products_df.to_dict(orient='records'))
+    session.commit()
+
+    sql_df = pd.read_sql("SELECT products.id, sku FROM products WHERE store = 'Richarts'",
+                         con=engine)
+    sql_df['sku'] = sql_df['sku'].astype(int)
+
+    branches_df = pd.merge(sql_df, branchproducts_df, how='inner', on='sku')
+    branches_df.rename(columns={'id': 'product_id'}, inplace=True)
+    branches_df.drop(columns='sku', inplace=True)
+
+    session.bulk_insert_mappings(BranchProduct, branches_df.to_dict(orient='records'))
+    session.commit()
+
+    session.close()
 
 
 if __name__ == "__main__":
