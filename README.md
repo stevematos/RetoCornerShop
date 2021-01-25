@@ -5,24 +5,18 @@
 - **Case 2**: Processing CSV files to extract clean information
 
 ## Prerequisites
-- Delete Database db.sqlite in `integrations/richart_wholesale_club/db.sqlite` and `scrapers/spiders/db.sqlite`
 - Run script database_setup
-- Copy db.sqlite in the paths `integrations/richart_wholesale_club/db.sqlite` and `scrapers/spiders/db.sqlite`
 
 ## Process
 
 ### Case 1
 For this case it is only necessary to run the python file: `ingestion.py`
 
-It will be saved in the database hosted on the path: `integrations/richart_wholesale_club/db.sqlite`
-
 ### Case 2
 For this case it is only necessary to run the following command:
 ```shell script
   scrapy crawl ca_walmart
 ```
-
-It will be saved in the database hosted on the path: `scrapers/spiders/db.sqlite`
 
 ---
 **NOTE**
@@ -33,7 +27,7 @@ If the following error appears :
 It is a Bot Protection Page with captcha v2.
 
 For resolving, follow with the following steps:
-1. Enter any link that says Redirecting (307), 
+1. Enter any link that says Crawled (200) and and in the link is the word blocked, 
 for example: `https://www.walmart.ca/blocked?url=L2VuL2lwL2FwcGxlLW1jaW50b3NoLXlvdXItZnJlc2gtbWFya2V0LzYwMDAxOTczNDM1NDI=&uuid=9be49990-5f04-11eb-aafd-23912374fcaf&vid=&g=a'`
 2. You will get a page similar to this:
 ![page_bot_protection](images/page_bot_protection.png)
@@ -49,5 +43,4 @@ Solve the captcha v2
 
 ## Improvements for the future
 - The issue could be solved with captcha v2 with selenium
-- Right now, there are two SQlite databases, but it is recommended that both scraper and ingest data connect to a common database on a server.
-
+- At this time, a SQlite database is used, but it is recommended that in both cases connect to a database in the cloud.
