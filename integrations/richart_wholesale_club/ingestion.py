@@ -13,12 +13,13 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__
 ASSETS_DIR = os.path.join(PROJECT_DIR, "assets")
 PRODUCTS_PATH = os.path.join(ASSETS_DIR, "PRODUCTS.csv")
 PRICES_STOCK_PATH = os.path.join(ASSETS_DIR, "PRICES-STOCK.csv")
-DB_DIR = os.path.join(PROJECT_DIR, 'integrations/richart_wholesale_club', 'db.sqlite')
+DB_DIR = os.path.join(PROJECT_DIR, 'db.sqlite')
 engine = create_engine(r'sqlite:///' + DB_DIR)
 
 
 # Process CSV files
 def process_csv_files():
+    print(DB_DIR)
     products_df = pd.read_csv(filepath_or_buffer=PRODUCTS_PATH, sep="|")
     prices_stock_df = pd.read_csv(filepath_or_buffer=PRICES_STOCK_PATH, sep="|")
 
