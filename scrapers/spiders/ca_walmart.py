@@ -22,12 +22,14 @@ class CaWalmartBot(scrapy.Spider):
 
     def parse(self, response):
 
+        # Search links products
         for url in response.css('.product-link::attr(href)').getall():
             yield response.follow(url, callback=self.parse_follow,
                                   cb_kwargs={'url': url}, headers=self.header)
 
         next_page = response.css('#loadmore::attr(href)').get()
 
+        # Scraping for next page
         if next_page is not None:
             yield response.follow(next_page, callback=self.parse)
 
@@ -44,30 +46,30 @@ class CaWalmartBot(scrapy.Spider):
             }
         }
 
+        # Scraping for product page
         data_page_json = json.loads(
             re.findall(r'(\{.*\})', response.xpath("/html/body/script[1]/text()").get())[0])
         prod_json = json.loads(response.css('.evlleax3 > script:nth-child(1)::text').get())
 
+        # Extract values products
         sku = prod_json['sku']
         description = prod_json['description']
         name = prod_json['name']
         brand = prod_json['brand']['name']
         image_url = prod_json['image']
         store = response.xpath('/html/head/meta[10]/@content').get()
-        # print(f'{sku} , {description}, {name}, {brand}, {image_url}')
-
-        upc = data_page_json['entities']['skus'][sku]['upc']
         category = data_page_json['entities']['skus'][sku]['facets'][0]['value']
-        # print(f'{upc} , {category}')
+        barcodes = data_page_json['entities']['skus'][sku]['upc']
+        package = data_page_json['entities']['skus'][sku]['description']
 
+        # Join Category
         for i in range(3):
             category = '{0} | {1}'.format(data_page_json['entities']['skus'][sku]['categories'][0][
                                               'hierarchy'][i]['displayName']['en'], category)
 
-        package = data_page_json['entities']['skus'][sku]['description']
-
+        # Save Product
         item = ProductItem()
-        item['barcodes'] = ', '.join(upc)
+        item['barcodes'] = ', '.join(barcodes)
         item['store'] = store
         item['category'] = category
         item['package'] = package
@@ -78,12 +80,12 @@ class CaWalmartBot(scrapy.Spider):
         item['sku'] = sku
         item['name'] = name
 
+        # Consulting the find_in_store api
         url_store = 'https://www.walmart.ca/api/product-page/find-in-store?' \
                     'latitude={}&longitude={}&lang=en&upc={}'
-
         for k in branches.keys():
             yield scrapy.http.Request(
-                url_store.format(branches[k]['latitude'], branches[k]['longitude'], upc[0]),
+                url_store.format(branches[k]['latitude'], branches[k]['longitude'], barcodes[0]),
                 callback=self.parse_find_store, cb_kwargs={'item': item},
                 meta={'handle_httpstatus_all': True},
                 dont_filter=False, headers=self.header)
@@ -91,10 +93,10 @@ class CaWalmartBot(scrapy.Spider):
     def parse_find_store(self, response, item):
         store_json = json.loads(response.body)
 
+        # Extracting product information and saving it
         branch = store_json['info'][0]['id']
         stock = store_json['info'][0]['availableToSellQty']
         price = store_json['info'][0].get('sellPrice', 0)
-
         item['branch'] = branch
         item['stock'] = stock
         item['price'] = price
