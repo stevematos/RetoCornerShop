@@ -37,12 +37,14 @@ class CaWalmartBot(scrapy.Spider):
         for url in response.css('.product-link::attr(href)').getall():
             yield response.follow(url, callback=self.parse_follow,
                                   cb_kwargs={'url': url}, headers=self.header)
-        # print(response.meta)
-        # print(response.headers)
         # for url in url_test:
         #     yield response.follow(url, callback=self.parse_follow, cb_kwargs={'url': url},
         #                           headers=self.header
         #                           )
+        next_page = response.css('#loadmore::attr(href)').get()
+
+        if next_page is not None:
+            yield response.follow(next_page, callback=self.parse)
 
     def parse_follow(self, response, url):
 
