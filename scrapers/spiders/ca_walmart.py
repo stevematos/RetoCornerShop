@@ -2,6 +2,8 @@ import scrapy
 import json
 import re
 
+from scrapers.items import ProductItem
+
 
 class CaWalmartBot(scrapy.Spider):
     name = 'ca_walmart'
@@ -42,10 +44,51 @@ class CaWalmartBot(scrapy.Spider):
         #                           headers=self.header
         #                           )
 
-
     def parse_follow(self, response, url):
+
+        branches = {
+            '3106': {
+                'latitude': '43.656422',
+                'longitude': '-79.435567'
+            },
+            '3124': {
+                'latitude': '48.412997',
+                'longitude': '-89.239717'
+            }
+        }
+
         data_page_json = json.loads(
             re.findall(r'(\{.*\})', response.xpath("/html/body/script[1]/text()").get())[0])
-        print(data_page_json)
         prod_json = json.loads(response.css('.evlleax3 > script:nth-child(1)::text').get())
-        print(prod_json)
+
+        sku = prod_json['sku']
+        description = prod_json['description']
+        name = prod_json['name']
+        brand = prod_json['brand']['name']
+        image_url = prod_json['image']
+        store = response.xpath('/html/head/meta[10]/@content').get()
+        # print(f'{sku} , {description}, {name}, {brand}, {image_url}')
+
+        upc = data_page_json['entities']['skus'][sku]['upc']
+        category = data_page_json['entities']['skus'][sku]['facets'][0]['value']
+        # print(f'{upc} , {category}')
+
+        for i in range(3):
+            category = '{0} | {1}'.format(data_page_json['entities']['skus'][sku]['categories'][0][
+                                              'hierarchy'][i]['displayName']['en'], category)
+
+        package = data_page_json['entities']['skus'][sku]['description']
+
+        item = ProductItem()
+        item['barcodes'] = ', '.join(upc)
+        item['store'] = store
+        item['category'] = category
+        item['package'] = package
+        item['url'] = self.start_urls[0] + url
+        item['brand'] = brand
+        item['image_url'] = ', '.join(image_url)
+        item['description'] = description.replace('<br>', '')
+        item['sku'] = sku
+        item['name'] = name
+
+
